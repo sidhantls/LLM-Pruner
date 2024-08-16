@@ -20,6 +20,8 @@ from LLMPruner.evaluator.ppl import PPLMetric
 from LLMPruner.datasets.example_samples import get_examples
 from LLMPruner.templates.prompts import prompts
 
+import eval_utils
+
 def set_random_seed(seed):
     random.seed(seed)
     np.random.seed(seed)
@@ -234,8 +236,8 @@ def main(args):
             'tokenizer': tokenizer,
         }, logger.best_checkpoint_path)
     
-    if args.eval_device != "cpu":
-        model.half()
+    # if args.eval_device != "cpu":
+    #     model.half()
     model.to(args.eval_device)
 
     model.config.pad_token_id = tokenizer.pad_token_id = 0 
@@ -267,6 +269,12 @@ def main(args):
     ppl = PPLMetric(model, tokenizer, ['wikitext2', 'ptb'], args.max_seq_len, device=args.eval_device)
     logger.log("PPL after pruning: {}".format(ppl))
     logger.log("Memory Requirement: {} MiB\n".format(torch.cuda.memory_allocated()/1024/1024))
+
+    all_metrics = eval_utils.evaluate_with_harness_full(model, tokenizer, args.eval_device, debug=False, batch_size=10)
+
+    print(f'\n\n\nMetrics: {all_metrics}')
+    with open(f'metics_pruner_{args.pruning_ratio}.json', 'w') as f:
+        json.dump(all_metrics, f) 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Pruning LLaMA (huggingface version)')
