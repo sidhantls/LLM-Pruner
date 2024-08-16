@@ -8,6 +8,7 @@ import sys
 import argparse
 from typing import List
 from pathlib import Path
+import json 
 
 import torch
 import transformers
@@ -22,6 +23,7 @@ from LLMPruner.peft import (
 )
 from LLMPruner.utils.prompter import Prompter, ZeroPrompter
 from LLMPruner.datasets.ppl_dataset import get_loaders
+import eval_utils 
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
@@ -213,9 +215,15 @@ def main(args):
     trainer.train(resume_from_checkpoint=args.resume_from_checkpoint)
 
     model.state_dict = old_state_dict
-    model.save_pretrained(args.output_dir)
+    #model.save_pretrained(args.output_dir)
 
+    all_metrics = eval_utils.evaluate_with_harness_full(model, tokenizer, args.eval_device, debug=False, batch_size=10)
+    print(f'\n\n\nMetrics: {all_metrics}')
+    pruning_ratio=0.80
+    with open(f'metics_pruner_wtrain_{pruning_ratio}.json', 'w') as f:
+        json.dump(all_metrics, f)
 
+	
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Tuning Pruned LLM')
 
