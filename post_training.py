@@ -219,8 +219,8 @@ def main(args):
 
     all_metrics = eval_utils.evaluate_with_harness_full(model, tokenizer, args.eval_device, debug=False, batch_size=10)
     print(f'\n\n\nMetrics: {all_metrics}')
-    pruning_ratio=0.80
-    with open(f'metics_pruner_wtrain_{pruning_ratio}.json', 'w') as f:
+    os.makedirs('metrics', exist_ok=True)
+    with open(f'metrics/train_{args.save_fname}.json', 'w') as f:
         json.dump(all_metrics, f)
 
 	
@@ -259,6 +259,7 @@ if __name__ == "__main__":
     # wandb params
     parser.add_argument('--wandb_project', type=str, default="")
     parser.add_argument('--resume_from_checkpoint', type=str, help="either training checkpoint or final adapter")
+    parser.add_argument('--save_fname', type=str, default="")
 
     #ddp
     parser.add_argument('--local_rank', type=int, default=-1)
