@@ -7,6 +7,7 @@ import copy
 import random
 import argparse
 from typing import Tuple
+import json 
 
 import torch
 import numpy as np
@@ -38,13 +39,14 @@ def main(args):
         setup_sublogger=True
     )
 
-    tokenizer = LlamaTokenizer.from_pretrained(args.base_model)
+    tokenizer = LlamaTokenizer.from_pretrained(args.base_model, cache_dir=args.cache_dir)
     model = LlamaForCausalLM.from_pretrained(
         args.base_model,
-        low_cpu_mem_usage=True if args.torch_version >=1.9 else False
+        cache_dir=args.cache_dir,
+        #low_cpu_mem_usage=True if args.torch_version >=1.9 else False
     )
-    if args.device != "cpu":
-        model.half()
+    #if args.device != "cpu":
+    #    model.half()
     model.to(args.device)
 
     if args.test_before_train:
@@ -315,6 +317,7 @@ if __name__ == "__main__":
 
     parser.add_argument('--seed', type=int, default=42, help='seed')
     parser.add_argument('--save_model', action='store_true', help='if save model')
+    parser.add_argument('--cache_dir', type=str, default="cache_dir", help='cache_dir')
     args = parser.parse_args()
 
     torch_version = float('.'.join(torch.__version__.split('.')[:2]))
