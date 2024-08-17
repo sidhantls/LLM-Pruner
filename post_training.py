@@ -217,7 +217,7 @@ def main(args):
     model.state_dict = old_state_dict
     #model.save_pretrained(args.output_dir)
 
-    all_metrics = eval_utils.evaluate_with_harness_full(model, tokenizer, args.eval_device, debug=False, batch_size=10)
+    all_metrics = eval_utils.evaluate_with_harness_full(model, tokenizer, 'cuda', debug=False, batch_size=10)
     print(f'\n\n\nMetrics: {all_metrics}')
     os.makedirs('metrics', exist_ok=True)
     with open(f'metrics/train_{args.save_fname}.json', 'w') as f:
