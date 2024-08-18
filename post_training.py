@@ -25,6 +25,10 @@ from LLMPruner.utils.prompter import Prompter, ZeroPrompter
 from LLMPruner.datasets.ppl_dataset import get_loaders
 import eval_utils 
 
+import datasets
+
+datasets.config.HF_DATASETS_TRUST_REMOTE_CODE=True
+
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
 def main(args):
