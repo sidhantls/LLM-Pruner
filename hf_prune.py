@@ -20,6 +20,9 @@ from LLMPruner.utils.logger import LoggerWithDepth
 from LLMPruner.evaluator.ppl import PPLMetric
 from LLMPruner.datasets.example_samples import get_examples
 from LLMPruner.templates.prompts import prompts
+import datasets
+
+datasets.config.HF_DATASETS_TRUST_REMOTE_CODE=True
 
 import eval_utils
 
