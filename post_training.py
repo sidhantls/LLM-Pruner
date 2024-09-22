@@ -12,6 +12,7 @@ from pathlib import Path
 import torch
 import transformers
 from datasets import load_dataset
+import json 
 
 from LLMPruner.peft import (
     LoraConfig,
@@ -22,6 +23,7 @@ from LLMPruner.peft import (
 )
 from LLMPruner.utils.prompter import Prompter, ZeroPrompter
 from LLMPruner.datasets.ppl_dataset import get_loaders
+import eval_utils
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
@@ -215,6 +217,11 @@ def main(args):
     model.state_dict = old_state_dict
     model.save_pretrained(args.output_dir)
 
+    all_metrics = eval_utils.evaluate_with_harness_full(model.cuda(), tokenizer, 'cuda', debug=False, batch_size=10)
+    print(f'\n\n\nMetrics: {all_metrics}')
+    os.makedirs('metrics', exist_ok=True)
+    with open(f'metrics/train_{args.save_fname}.json', 'w') as f:
+        json.dump(all_metrics, f)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Tuning Pruned LLM')
@@ -247,7 +254,8 @@ if __name__ == "__main__":
     parser.add_argument('--train_on_inputs', default=False, action="store_true", help='Train on inputs. If False, masks out inputs in loss')
     parser.add_argument('--add_eos_token', default=False, action="store_true")
     parser.add_argument('--group_by_length', default=False, action="store_true", help="faster, but produces an odd training loss curve")
-   
+    parser.add_argument('--save_fname', type=str, help="save_fname")
+
     # wandb params
     parser.add_argument('--wandb_project', type=str, default="")
     parser.add_argument('--resume_from_checkpoint', type=str, help="either training checkpoint or final adapter")
