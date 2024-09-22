@@ -20,6 +20,8 @@ from LLMPruner.evaluator.ppl import PPLMetric
 from LLMPruner.datasets.example_samples import get_examples
 from LLMPruner.templates.prompts import prompts
 
+import eval_utils
+
 def set_random_seed(seed):
     random.seed(seed)
     np.random.seed(seed)
@@ -36,10 +38,11 @@ def main(args):
         setup_sublogger=True
     )
 
-    tokenizer = LlamaTokenizer.from_pretrained(args.base_model)
+    tokenizer = LlamaTokenizer.from_pretrained(args.base_model, cache_dir=args.cache_dir)
     model = LlamaForCausalLM.from_pretrained(
         args.base_model,
-        low_cpu_mem_usage=True if args.torch_version >=1.9 else False
+        low_cpu_mem_usage=True if args.torch_version >=1.9 else False,
+        cache_dir=args.cache_dir
     )
     if args.device != "cpu":
         model.half()
@@ -268,6 +271,14 @@ def main(args):
     logger.log("PPL after pruning: {}".format(ppl))
     logger.log("Memory Requirement: {} MiB\n".format(torch.cuda.memory_allocated()/1024/1024))
 
+    model = model.cuda()
+    all_metrics = eval_utils.evaluate_with_harness_full(model, tokenizer, args.eval_device, debug=False, batch_size=10)
+
+    print(f'\n\n\nMetrics: {all_metrics}')
+    os.makedirs('metrics', exist_ok=True)
+    with open(f'metrics/{args.pruning_ratio}.json', 'w') as f:
+        json.dump(all_metrics, f) 
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Pruning LLaMA (huggingface version)')
 
@@ -304,6 +315,7 @@ if __name__ == "__main__":
     parser.add_argument('--test_before_train', action='store_true', help='whether test before train')
     parser.add_argument('--eval_device', type=str, default="cuda", help='eval device')
     parser.add_argument('--test_after_train', action='store_true', help='whether test after train')
+    parser.add_argument('--cache_dir', type=str, default="train_cache", help='cache dir')
 
     parser.add_argument('--seed', type=int, default=42, help='seed')
     parser.add_argument('--save_model', action='store_true', help='if save model')
