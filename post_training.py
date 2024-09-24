@@ -46,8 +46,9 @@ def main(args):
     if ddp:
         gradient_accumulation_steps = gradient_accumulation_steps // world_size
 
-    if device == 'cuda':
-        model.half()
+    #if device == 'cuda':
+    #    model.half()
+    model = model.float() 
 
     tokenizer.pad_token_id = 0
     tokenizer.padding_side = "left"
@@ -178,6 +179,7 @@ def main(args):
         train_dataset=train_data,
         eval_dataset=val_data,
         args=transformers.TrainingArguments(
+            #max_steps=300,
             per_device_train_batch_size=args.micro_batch_size,
             gradient_accumulation_steps=gradient_accumulation_steps,
             warmup_steps=100,
@@ -189,8 +191,8 @@ def main(args):
             optim="adamw_torch",
             evaluation_strategy="steps",
             save_strategy="steps",
-            eval_steps=100,
-            save_steps=200,
+            eval_steps=100000,
+            save_steps=200000,
             output_dir=args.output_dir,
             save_total_limit=20,
             load_best_model_at_end=True,
@@ -217,7 +219,9 @@ def main(args):
     model.state_dict = old_state_dict
     model.save_pretrained(args.output_dir)
 
-    all_metrics = eval_utils.evaluate_with_harness_full(model.cuda(), tokenizer, 'cuda', debug=False, batch_size=10)
+
+    model = model.cuda()
+    all_metrics = eval_utils.evaluate_with_harness_full(model, tokenizer, 'cuda', debug=False, batch_size=12)
     print(f'\n\n\nMetrics: {all_metrics}')
     os.makedirs('metrics', exist_ok=True)
     with open(f'metrics/train_{args.save_fname}.json', 'w') as f:
@@ -254,7 +258,7 @@ if __name__ == "__main__":
     parser.add_argument('--train_on_inputs', default=False, action="store_true", help='Train on inputs. If False, masks out inputs in loss')
     parser.add_argument('--add_eos_token', default=False, action="store_true")
     parser.add_argument('--group_by_length', default=False, action="store_true", help="faster, but produces an odd training loss curve")
-    parser.add_argument('--save_fname', type=str, help="save_fname")
+    parser.add_argument('--save_fname', default='test', type=str, help="save_fname")
 
     # wandb params
     parser.add_argument('--wandb_project', type=str, default="")
