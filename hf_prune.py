@@ -32,9 +32,9 @@ def main(args):
     set_random_seed(args.seed)
 
     logger = LoggerWithDepth(
-        env_name="{}".format(args.save_ckpt_log_name), 
+        env_name="env_name", 
         config=args.__dict__,
-        root_dir='prune_log',
+        root_dir=args.save_ckpt_log_name,
         setup_sublogger=True
     )
 
@@ -75,7 +75,7 @@ def main(args):
 
     for param in model.parameters():
         param.requires_grad_(True)
-    before_pruning_parameters = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    before_pruning_parameters = sum(p.numel() for p in model.parameters())
     
     forward_prompts = torch.tensor([
         [    1,   306,  4658,   278,  6593,   310,  2834,   338],
@@ -271,13 +271,24 @@ def main(args):
     logger.log("PPL after pruning: {}".format(ppl))
     logger.log("Memory Requirement: {} MiB\n".format(torch.cuda.memory_allocated()/1024/1024))
 
-    model = model.cuda()
-    all_metrics = eval_utils.evaluate_with_harness_full(model, tokenizer, args.eval_device, debug=False, batch_size=10)
-
+    model = model.cuda().half()
+    all_metrics = eval_utils.evaluate_with_harness_full(model, tokenizer, args.eval_device, debug=False, batch_size=12)
+    
+    import os 
     print(f'\n\n\nMetrics: {all_metrics}')
     os.makedirs('metrics', exist_ok=True)
     with open(f'metrics/{args.pruning_ratio}.json', 'w') as f:
         json.dump(all_metrics, f) 
+
+    after_pruning_parameters = sum(p.numel() for p in model.parameters())
+    ratio = after_pruning_parameters / before_pruning_parameters
+
+    import os
+    os.makedirs('metrics', exist_ok=True)
+    with open(f'metrics/pruning_metrics_{args.pruning_ratio}.txt', 'w') as f:
+        f.write(f"before_pruning_parameters: {before_pruning_parameters}\n"
+            f"after_pruning_parameters: {after_pruning_parameters}\n"
+            f"ratio (after/before): {ratio:.4f}")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Pruning LLaMA (huggingface version)')
