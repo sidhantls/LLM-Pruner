@@ -20,6 +20,8 @@ from LLMPruner.evaluator.ppl import PPLMetric
 from LLMPruner.datasets.example_samples import get_examples
 from LLMPruner.templates.prompts import prompts
 
+import eval_utils
+
 def set_random_seed(seed):
     random.seed(seed)
     np.random.seed(seed)
@@ -36,12 +38,13 @@ def main(args):
         setup_sublogger=True
     )
 
-    tokenizer = AutoTokenizer.from_pretrained(args.base_model)
+    tokenizer = AutoTokenizer.from_pretrained(args.base_model, cache_dir=args.cache_dir)
     model = LlamaForCausalLM.from_pretrained(
         args.base_model,
         device_map="auto",
-        torch_dtype=torch.float16,
+        torch_dtype=torch.float16, cache_dir=args.cache_dir
     )
+
     if args.device != "cpu":
         model.half()
 
@@ -76,7 +79,8 @@ def main(args):
     for param in model.parameters():
         param.requires_grad_(True)
     before_pruning_parameters = sum(p.numel() for p in model.parameters() if p.requires_grad)
-    
+    before_pruning_parameters = sum(p.numel() for p in model.parameters())
+
     forward_prompts = torch.tensor([
         [    1,   306,  4658,   278,  6593,   310,  2834,   338],
         [    1,  3439, 17632,  1925, 29892,   278,  6368,   310],
@@ -275,6 +279,23 @@ def main(args):
     logger.log("PPL after pruning: {}".format(ppl))
     logger.log("Memory Requirement: {} MiB\n".format(torch.cuda.memory_allocated()/1024/1024))
 
+    model = model.cuda().half()
+    all_metrics = eval_utils.evaluate_with_harness_full(model, tokenizer, args.eval_device, debug=False, batch_size=12)
+
+    import os
+    print(f'\n\n\nMetrics: {all_metrics}')
+    os.makedirs('metrics', exist_ok=True)
+    with open(f'metrics/llama3_{args.pruning_ratio}.json', 'w') as f:
+        json.dump(all_metrics, f)
+
+    after_pruning_parameters = sum(p.numel() for p in model.parameters())
+    ratio = after_pruning_parameters / before_pruning_parameters
+
+    with open(f'metrics/llama3_pruning_{args.pruning_ratio}.txt', 'w') as f:
+        f.write(f"before_pruning_parameters: {before_pruning_parameters}\n"
+            f"after_pruning_parameters: {after_pruning_parameters}\n"
+            f"ratio (after/before): {ratio:.4f}\n")
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Pruning LLaMA (huggingface version)')
 
@@ -314,6 +335,8 @@ if __name__ == "__main__":
 
     parser.add_argument('--seed', type=int, default=42, help='seed')
     parser.add_argument('--save_model', action='store_true', help='if save model')
+    parser.add_argument('--cache_dir', type=str, default="train_cache", help='cache dir')
+
     args = parser.parse_args()
 
     torch_version = float('.'.join(torch.__version__.split('.')[:2]))

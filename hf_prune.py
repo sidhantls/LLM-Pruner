@@ -273,19 +273,19 @@ def main(args):
 
     model = model.cuda().half()
     all_metrics = eval_utils.evaluate_with_harness_full(model, tokenizer, args.eval_device, debug=False, batch_size=12)
-    
+    #all_metrics = {}
+ 
     import os 
     print(f'\n\n\nMetrics: {all_metrics}')
+    suffix = args.base_model.split('/')[-1]
     os.makedirs('metrics', exist_ok=True)
-    with open(f'metrics/{args.pruning_ratio}.json', 'w') as f:
+    with open(f'metrics/{suffix}_{args.pruning_ratio}.json', 'w') as f:
         json.dump(all_metrics, f) 
 
     after_pruning_parameters = sum(p.numel() for p in model.parameters())
     ratio = after_pruning_parameters / before_pruning_parameters
 
-    import os
-    os.makedirs('metrics', exist_ok=True)
-    with open(f'metrics/pruning_metrics_{args.pruning_ratio}.txt', 'w') as f:
+    with open(f'metrics/pruning_{suffix}_{args.pruning_ratio}.txt', 'w') as f:
         f.write(f"before_pruning_parameters: {before_pruning_parameters}\n"
             f"after_pruning_parameters: {after_pruning_parameters}\n"
             f"ratio (after/before): {ratio:.4f}")

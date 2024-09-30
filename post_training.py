@@ -144,9 +144,14 @@ def main(args):
         train_val = data["train"].train_test_split(
             test_size=args.val_set_size, shuffle=True, seed=42
         )
-        train_data = (
-            train_val["train"].shuffle().map(generate_and_tokenize_prompt)
+        if args.max_train_samples:
+            train_data = (
+            train_val["train"].shuffle().select(range(args.max_train_samples)).map(generate_and_tokenize_prompt)
         )
+        else:
+            train_data = (
+            train_val["train"].shuffle().map(generate_and_tokenize_prompt))
+
         val_data = {
             args.data_path: train_val["test"].shuffle().map(generate_and_tokenize_prompt),
         }
@@ -173,13 +178,14 @@ def main(args):
                 _, test_data = get_ptb(seq_len, None)
                 test_data = split_and_tokenizer(test_data, tokenizer, seq_len, field_name='sentence')
             val_data[extra_dataset] = test_data
-
+ 
+    bs = args.micro_batch_size * gradient_accumulation_steps
     trainer = transformers.Trainer(
         model=model,
         train_dataset=train_data,
         eval_dataset=val_data,
         args=transformers.TrainingArguments(
-            #max_steps=300,
+            #max_steps=None,
             per_device_train_batch_size=args.micro_batch_size,
             gradient_accumulation_steps=gradient_accumulation_steps,
             warmup_steps=100,
@@ -191,10 +197,10 @@ def main(args):
             optim="adamw_torch",
             evaluation_strategy="steps",
             save_strategy="steps",
-            eval_steps=100000,
-            save_steps=200000,
+            eval_steps=200,
+            save_steps=200,
             output_dir=args.output_dir,
-            save_total_limit=20,
+            save_total_limit=3,
             load_best_model_at_end=True,
             ddp_find_unused_parameters=None,
             group_by_length=args.group_by_length,
@@ -224,7 +230,7 @@ def main(args):
     all_metrics = eval_utils.evaluate_with_harness_full(model, tokenizer, 'cuda', debug=False, batch_size=12)
     print(f'\n\n\nMetrics: {all_metrics}')
     os.makedirs('metrics', exist_ok=True)
-    with open(f'metrics/train_{args.save_fname}.json', 'w') as f:
+    with open(f'metrics/train_{args.suffix}_{args.save_fname}.json', 'w') as f:
         json.dump(all_metrics, f)
 
 if __name__ == "__main__":
@@ -259,6 +265,7 @@ if __name__ == "__main__":
     parser.add_argument('--add_eos_token', default=False, action="store_true")
     parser.add_argument('--group_by_length', default=False, action="store_true", help="faster, but produces an odd training loss curve")
     parser.add_argument('--save_fname', default='test', type=str, help="save_fname")
+    parser.add_argument('--suffix', default='', type=str, help="save_fname")
 
     # wandb params
     parser.add_argument('--wandb_project', type=str, default="")
@@ -266,7 +273,8 @@ if __name__ == "__main__":
 
     #ddp
     parser.add_argument('--local_rank', type=int, default=-1)
-   
+    parser.add_argument('--max_train_samples', type=int, default=0)
+
     args = parser.parse_args()
     torch_version = int(torch.__version__.split('.')[1])
     args.torch_version = torch_version
