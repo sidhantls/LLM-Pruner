@@ -34,7 +34,7 @@ def main(args):
     logger = LoggerWithDepth(
         env_name="{}".format(args.save_ckpt_log_name), 
         config=args.__dict__,
-        root_dir='prune_log',
+        root_dir=args.cache_dir,
         setup_sublogger=True
     )
 
