@@ -236,6 +236,7 @@ def main(args):
             'model': model, 
             'tokenizer': tokenizer,
         }, logger.best_checkpoint_path)
+        print('\n\nModel saved at: ', logger.best_checkpoint_path)
     
     if args.eval_device != "cpu":
         model.half()
@@ -271,7 +272,7 @@ def main(args):
     logger.log("PPL after pruning: {}".format(ppl))
     logger.log("Memory Requirement: {} MiB\n".format(torch.cuda.memory_allocated()/1024/1024))
 
-    model = model.cuda().half()
+    model = model.cuda().half().eval()
     all_metrics = eval_utils.evaluate_with_harness_full(model, tokenizer, args.eval_device, debug=False, batch_size=12)
     #all_metrics = {}
  
