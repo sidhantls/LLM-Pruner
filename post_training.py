@@ -185,7 +185,7 @@ def main(args):
         train_dataset=train_data,
         eval_dataset=val_data,
         args=transformers.TrainingArguments(
-            #max_steps=None,
+            #max_steps=1,
             per_device_train_batch_size=args.micro_batch_size,
             gradient_accumulation_steps=gradient_accumulation_steps,
             warmup_steps=100,
@@ -225,8 +225,7 @@ def main(args):
     model.state_dict = old_state_dict
     model.save_pretrained(args.output_dir)
 
-
-    model = model.cuda()
+    model = model.cuda().eval()
     all_metrics = eval_utils.evaluate_with_harness_full(model, tokenizer, 'cuda', debug=False, batch_size=12)
     print(f'\n\n\nMetrics: {all_metrics}')
     os.makedirs('metrics', exist_ok=True)
