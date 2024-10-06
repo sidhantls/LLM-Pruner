@@ -78,7 +78,8 @@ def main(args):
     for param in model.parameters():
         param.requires_grad_(True)
     before_pruning_parameters = sum(p.numel() for p in model.parameters() if p.requires_grad)
-    
+    before_pruning_parameters = sum(p.numel() for p in model.parameters())
+ 
     forward_prompts = torch.tensor([
         [    1,   306,  4658,   278,  6593,   310,  2834,   338],
         [    1,  3439, 17632,  1925, 29892,   278,  6368,   310],
@@ -274,7 +275,7 @@ def main(args):
     logger.log("Memory Requirement: {} MiB\n".format(torch.cuda.memory_allocated()/1024/1024))
 
     model = model.cuda().eval().half() 
-    results = evaluate_with_harness_full(model, tokenizer, model.device, debug=False, batch_size=8)
+    results = eval_utils.evaluate_with_harness_full(model, tokenizer, model.device, debug=False, batch_size=8)
 
     # Get the filename from args.base_model
     base_model_name = args.base_model.split("/")[-1]
@@ -283,6 +284,12 @@ def main(args):
 
     with open(output_file, "w") as f:
         json.dump(results, f)
+
+    after_pruning_parameters = sum(p.numel() for p in model.parameters())
+
+    file_path = f"metrics/param?{pruning_ratio}_{base_model_name}.txt"
+    with open(file_path, "w") as f:
+        f.write(f"before:{before_pruning_parameters}\nafter:{after_pruning_parameters}\n{pruning_ratio}\n")
 
 
 if __name__ == "__main__":
