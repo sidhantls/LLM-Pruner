@@ -223,7 +223,7 @@ def main(args):
     results = evaluate_with_harness_full(model, tokenizer, model.device, debug=False, batch_size=8)
 
     base_model_name = args.base_model.split("/")[-1]
-    output_file = os.path.join("metrics", f"train_{suffix}_{base_model_name}.json")
+    output_file = os.path.join("metrics", f"train_{args.suffix}_{base_model_name}.json")
     with open(output_file, "w") as f:
         json.dump(results, f)
         
