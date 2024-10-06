@@ -47,8 +47,8 @@ def main(args):
     if ddp:
         gradient_accumulation_steps = gradient_accumulation_steps // world_size
 
-    if device == 'cuda':
-        model.half()
+    # if device == 'cuda':
+    #     model.half()
 
     tokenizer.pad_token_id = 0
     tokenizer.padding_side = "left"
