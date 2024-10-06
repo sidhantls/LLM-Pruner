@@ -223,7 +223,7 @@ def main(args):
     results = evaluate_with_harness_full(model, tokenizer, model.device, debug=False, batch_size=8)
 
     base_model_name = args.base_model.split("/")[-1]
-    output_file = os.path.join("metrics", f"{base_model_name}.json")
+    output_file = os.path.join("metrics", f"train_{suffix}_{base_model_name}.json")
     with open(output_file, "w") as f:
         json.dump(results, f)
         
@@ -265,7 +265,9 @@ if __name__ == "__main__":
 
     #ddp
     parser.add_argument('--local_rank', type=int, default=-1)
-   
+
+    parser.add_argument('--suffix', type=str, default="", help='suffix to add to results file')
+
     args = parser.parse_args()
     torch_version = int(torch.__version__.split('.')[1])
     args.torch_version = torch_version
