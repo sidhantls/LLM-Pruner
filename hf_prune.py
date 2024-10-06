@@ -1,6 +1,7 @@
 import os
 import gc
 import sys
+import json
 import time
 import json
 import copy
@@ -20,6 +21,7 @@ from LLMPruner.evaluator.ppl import PPLMetric
 from LLMPruner.datasets.example_samples import get_examples
 from LLMPruner.templates.prompts import prompts
 
+import eval_utils
 def set_random_seed(seed):
     random.seed(seed)
     np.random.seed(seed)
@@ -267,6 +269,16 @@ def main(args):
     ppl = PPLMetric(model, tokenizer, ['wikitext2', 'ptb'], args.max_seq_len, device=args.eval_device)
     logger.log("PPL after pruning: {}".format(ppl))
     logger.log("Memory Requirement: {} MiB\n".format(torch.cuda.memory_allocated()/1024/1024))
+
+    model = model.cuda().eval().half() 
+    results = evaluate_with_harness_full(model, tokenizer, model.device, debug=False, batch_size=8)
+
+    # Get the filename from args.base_model
+    base_model_name = args.base_model.split("/")[-1]
+    output_file = os.path.join("metrics", f"{base_model_name}.json")
+    with open(output_file, "w") as f:
+        json.dump(results, f)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Pruning LLaMA (huggingface version)')
