@@ -5,6 +5,7 @@ https://github.com/tloen/alpaca-lora/blob/main/finetune.py
 
 import os
 import sys
+import json 
 import argparse
 from typing import List
 from pathlib import Path
@@ -22,6 +23,8 @@ from LLMPruner.peft import (
 )
 from LLMPruner.utils.prompter import Prompter, ZeroPrompter
 from LLMPruner.datasets.ppl_dataset import get_loaders
+
+import eval_utils 
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
@@ -215,7 +218,15 @@ def main(args):
     model.state_dict = old_state_dict
     model.save_pretrained(args.output_dir)
 
+    # eval
+    model = model.cuda().eval()
+    results = evaluate_with_harness_full(model, tokenizer, model.device, debug=False, batch_size=8)
 
+    base_model_name = args.base_model.split("/")[-1]
+    output_file = os.path.join("metrics", f"{base_model_name}.json")
+    with open(output_file, "w") as f:
+        json.dump(results, f)
+        
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Tuning Pruned LLM')
 
