@@ -38,13 +38,16 @@ def main(args):
         setup_sublogger=True
     )
 
-    tokenizer = LlamaTokenizer.from_pretrained(args.base_model)
+    tokenizer = LlamaTokenizer.from_pretrained(args.base_model, cache_dir=args.cache_dir)
     model = LlamaForCausalLM.from_pretrained(
         args.base_model,
-        low_cpu_mem_usage=True if args.torch_version >=1.9 else False
+        low_cpu_mem_usage=True if args.torch_version >=1.9 else False,
+        cache_dir=args.cache_dir
     )
+    
     if args.device != "cpu":
         model.half()
+    
     model.to(args.device)
 
     if args.test_before_train:
@@ -275,7 +278,9 @@ def main(args):
 
     # Get the filename from args.base_model
     base_model_name = args.base_model.split("/")[-1]
-    output_file = os.path.join("metrics", f"{base_model_name}.json")
+    output_file = os.path.join("metrics", f"{pruning_ratio}_{base_model_name}.json")
+    os.makedirs("metrics", exist_ok=True)
+
     with open(output_file, "w") as f:
         json.dump(results, f)
 
@@ -288,6 +293,7 @@ if __name__ == "__main__":
     parser.add_argument('--save_ckpt_log_name', type=str, default="llama_prune", help='the path for save the checkpoint and the log. The final path would be log/{your_name_here}_{pruner_type}_{pruning_ratio}')
     parser.add_argument('--pruning_ratio', type=float, default=0.5, help='pruning ratio')
     parser.add_argument('--pruner_type', type=str, default='l2', help='pruner type')
+    parser.add_argument('--cache_dir', type=str, default='', help='Cache_dir to use for model and tokenizer')
 
     # argument for generation
     parser.add_argument('--temperature', type=float, default=1.0, help='temperature')
