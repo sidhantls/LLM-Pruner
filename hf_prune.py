@@ -239,7 +239,8 @@ def main(args):
             'model': model, 
             'tokenizer': tokenizer,
         }, logger.best_checkpoint_path)
-    
+        print("\n\nModel Saved:", logger.best_checkpoint_path)
+
     if args.eval_device != "cpu":
         model.half()
     model.to(args.eval_device)
@@ -279,7 +280,7 @@ def main(args):
 
     # Get the filename from args.base_model
     base_model_name = args.base_model.split("/")[-1]
-    output_file = os.path.join("metrics", f"{pruning_ratio}_{base_model_name}.json")
+    output_file = os.path.join("metrics", f"{args.pruning_ratio}_{base_model_name}.json")
     os.makedirs("metrics", exist_ok=True)
 
     with open(output_file, "w") as f:
@@ -287,9 +288,9 @@ def main(args):
 
     after_pruning_parameters = sum(p.numel() for p in model.parameters())
 
-    file_path = f"metrics/param?{pruning_ratio}_{base_model_name}.txt"
+    file_path = f"metrics/param_{args.pruning_ratio}_{base_model_name}.txt"
     with open(file_path, "w") as f:
-        f.write(f"before:{before_pruning_parameters}\nafter:{after_pruning_parameters}\n{pruning_ratio}\n")
+        f.write(f"before:{before_pruning_parameters}\nafter:{after_pruning_parameters}\n{after_pruning_parameters/before_pruning_parameters:.3f}\n")
 
 
 if __name__ == "__main__":
