@@ -33,6 +33,8 @@ def main(args):
     os.environ["WANDB_PROJECT"] = args.wandb_project
 
     # Load Pruned Model
+    print("Loading model:", args.prune_model)
+
     pruned_dict = torch.load(args.prune_model, map_location='cpu')
     tokenizer, model = pruned_dict['tokenizer'], pruned_dict['model']
 
@@ -49,6 +51,7 @@ def main(args):
 
     # if device == 'cuda':
     #     model.half()
+    model = model.float() 
 
     tokenizer.pad_token_id = 0
     tokenizer.padding_side = "left"
@@ -220,7 +223,7 @@ def main(args):
 
     # eval
     model = model.cuda().eval()
-    results = evaluate_with_harness_full(model, tokenizer, model.device, debug=False, batch_size=8)
+    results = eval_utils.evaluate_with_harness_full(model, tokenizer, model.device, debug=False, batch_size=8)
 
     base_model_name = args.base_model.split("/")[-1]
     output_file = os.path.join("metrics", f"train_{args.suffix}_{base_model_name}.json")
