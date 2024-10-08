@@ -8,7 +8,7 @@ tune_ckpt_path="${CACHE_DIR}"/tuned_model/
 
 rm -r $CACHE_DIR
 
-for RATIO in 0.18 0.25
+for RATIO in 0.14 0.18 0.25
 do
   # Pruning the model
   python hf_prune.py --base_model=$MODEL --pruning_ratio=$RATIO --device cpu --eval_device cuda --block_wise \
