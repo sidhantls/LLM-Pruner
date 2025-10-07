@@ -8,9 +8,8 @@ tune_ckpt_path="${CACHE_DIR}"/tuned_model/
 
 rm -r $CACHE_DIR
 
-mkdir $CACHE_DIR
-mkdir $tune_ckpt_path
-
+mkdir -p "$CACHE_DIR"
+mkdir -p "$tune_ckpt_path"
 
 for RATIO in 0.14 0.18 0.25
 do
