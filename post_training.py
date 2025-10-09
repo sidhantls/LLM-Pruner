@@ -23,6 +23,7 @@ from LLMPruner.peft import (
 )
 from LLMPruner.utils.prompter import Prompter, ZeroPrompter
 from LLMPruner.datasets.ppl_dataset import get_loaders
+import wandb
 
 import eval_utils 
 
@@ -229,6 +230,11 @@ def main(args):
     output_file = os.path.join("metrics", f"train_{args.suffix}_{base_model_name}.json")
     with open(output_file, "w") as f:
         json.dump(results, f)
+
+    metrics_dir = "metrics"
+    for filename in os.listdir(metrics_dir):
+        if filename.endswith(".json"):
+            wandb.save(os.path.join(metrics_dir, filename))
         
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Tuning Pruned LLM')
