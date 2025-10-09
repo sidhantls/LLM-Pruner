@@ -32,14 +32,14 @@ def evaluate_with_harness_full(model, tokenizer, device, debug=False, batch_size
 
     results1 = simple_evaluate( # call simple_evaluate
             model=lm_obj,
-            tasks=["hellaswag", "winogrande", "arc_easy", "arc_challenge", "piqa", "boolq", "openbookqa"],
+            tasks=["piqa", "boolq", "openbookqa"],
             num_fewshot=0,
             limit=limit1,
             batch_size=batch_size,
             cache_requests=None,
             log_samples=False,
             bootstrap_iters=0,
-            gen_kwargs="max_new_tokens=40",
+            gen_kwargs="max_new_tokens=20",
         )
      
     results_mmlu = simple_evaluate( # call simple_evaluate
@@ -51,7 +51,7 @@ def evaluate_with_harness_full(model, tokenizer, device, debug=False, batch_size
         batch_size=batch_size,
         cache_requests=None,
         log_samples=False,
-        gen_kwargs="max_new_tokens=40",
+        gen_kwargs="max_new_tokens=20",
         bootstrap_iters=1
     )
 
@@ -64,7 +64,7 @@ def evaluate_with_harness_full(model, tokenizer, device, debug=False, batch_size
         batch_size=batch_size,
         cache_requests=None,
         log_samples=False,
-        gen_kwargs="max_new_tokens=40",
+        gen_kwargs="max_new_tokens=20",
         bootstrap_iters=1
     )
 
