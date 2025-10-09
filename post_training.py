@@ -35,7 +35,7 @@ def main(args):
     # Load Pruned Model
     print("Loading model:", args.prune_model)
 
-    pruned_dict = torch.load(args.prune_model, map_location='cpu')
+    pruned_dict = torch.load(args.prune_model, map_location='cpu', weights_only=False)
     tokenizer, model = pruned_dict['tokenizer'], pruned_dict['model']
 
     gradient_accumulation_steps = args.batch_size // args.micro_batch_size
