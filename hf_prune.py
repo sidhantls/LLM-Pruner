@@ -276,7 +276,7 @@ def main(args):
     logger.log("Memory Requirement: {} MiB\n".format(torch.cuda.memory_allocated()/1024/1024))
 
     model = model.cuda().eval().half() 
-    results = eval_utils.evaluate_with_harness_full(model, tokenizer, model.device, debug=False, batch_size=8)
+    results = eval_utils.evaluate_with_harness_full(model, tokenizer, model.device, debug=False, batch_size=2)
 
     # Get the filename from args.base_model
     base_model_name = args.base_model.split("/")[-1]
